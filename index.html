@@ -1,424 +1,263 @@
 <!doctype html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Face Mesh Probe</title>
+<meta name="theme-color" content="#111214">
+<title>nilai · Driver Behaviour Profiling</title>
+<meta name="description" content="nilai profiles your driving style from in-cabin video using computer vision. Final Year Project, Asia Pacific University.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' rx='44' fill='%23111214'/%3E%3Cpath d='M28 116 A72 72 0 0 1 172 116' fill='none' stroke='%23F28C28' stroke-width='16'/%3E%3Cpath d='M66 188 V116 A34 34 0 0 1 134 116 V188' fill='none' stroke='%23E7E5E0' stroke-width='34'/%3E%3Ccircle cx='100' cy='116' r='12' fill='%23F28C28'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Noto+Sans+SC:wght@400;700;900&display=swap">
 <style>
 :root{
-  --bg:#EEF2F0; --surface:#FFFFFF; --sunk:#E3E9E6; --ink:#15201C; --muted:#5B6964;
-  --line:#CCD6D2; --accent:#0B7F66; --accent-ink:#FFFFFF; --amber:#B45309; --warn:#B91C1C;
-  --stage:#0C1110;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --sans:"IBM Plex Sans",-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
-  color-scheme:light;
-}
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0B100E; --surface:#131A18; --sunk:#1A2320; --ink:#E2EAE6; --muted:#8C9A95;
-    --line:#26312D; --accent:#37D0A4; --accent-ink:#06130F; --amber:#F2A93B; --warn:#F87171;
-    --stage:#000000; color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0B100E; --surface:#131A18; --sunk:#1A2320; --ink:#E2EAE6; --muted:#8C9A95;
-  --line:#26312D; --accent:#37D0A4; --accent-ink:#06130F; --amber:#F2A93B; --warn:#F87171;
-  --stage:#000000; color-scheme:dark;
+  --ink:#111214; --ink-2:#0A0B0C; --line:#26282C;
+  --orange:#F28C28; --orange-text:#B5560C;
+  --paper:#F5F4F1; --card:#FFFFFF; --road:#E7E5E0; --navy:#13234A;
+  --muted-dark:#B8BCC4; --muted-light:#4A4F57;
 }
 *{box-sizing:border-box}
-html,body{margin:0}
-body{
-  background:var(--bg); color:var(--ink); font:15px/1.5 var(--sans);
-  padding:env(safe-area-inset-top,0px) 16px calc(24px + env(safe-area-inset-bottom,0px));
-  -webkit-text-size-adjust:100%;
-}
-.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-block:14px}
-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
-h1{font:600 20px/1.2 var(--mono);letter-spacing:-.01em;margin:0}
-h1 small{font:500 12px var(--mono);color:var(--muted);margin-left:6px;letter-spacing:.04em}
-.status{font:500 12px var(--mono);color:var(--muted);display:flex;align-items:center;gap:6px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
-.dot.ok{background:var(--accent)} .dot.busy{background:var(--amber)} .dot.err{background:var(--warn)}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Nunito','Noto Sans SC',system-ui,sans-serif;line-height:1.5}
+p,h1,h2{margin:0}
+a{color:var(--orange-text)}
+.wrap{max-width:560px;margin:0 auto;padding:0 24px}
+.dark{background:var(--ink);color:#fff}
+.wordmark{font-weight:900;letter-spacing:-.02em;line-height:1}
+.wordmark i{font-style:italic;color:var(--orange)}
 
-.stage{position:relative;background:var(--stage);border-radius:10px;overflow:hidden;
-  aspect-ratio:3/4;max-width:100%;display:grid;place-items:center}
-.stage.live{aspect-ratio:auto}
-canvas{display:block;width:100%;height:auto;touch-action:manipulation}
-.placeholder{color:#9FB1AA;text-align:center;padding:24px;font-size:14px;max-width:32ch}
-.placeholder b{color:#E2EAE6;font-weight:500}
-video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.badge{position:absolute;left:10px;top:10px;font:500 11px var(--mono);color:#E2EAE6;
-  background:rgba(0,0,0,.55);padding:3px 7px;border-radius:4px;letter-spacing:.03em}
-.badge[hidden]{display:none}
+/* header */
+header{position:sticky;top:0;z-index:10;background:var(--ink);border-bottom:1px solid var(--line)}
+header .wrap{height:64px;display:flex;align-items:center;justify-content:space-between;padding-right:12px}
+.brand{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none}
+.brand .wordmark{font-size:26px}
+.lang{display:flex;gap:2px;padding:3px;background:#222428;border-radius:12px}
+.lang button{min-width:44px;height:38px;border:0;border-radius:9px;background:transparent;color:#C9CCD2;font:700 13px 'Nunito','Noto Sans SC',sans-serif;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--orange);color:var(--ink);font-weight:900}
+.lang button:focus-visible,.btn:focus-visible{outline:3px solid #fff;outline-offset:2px}
 
-.controls{display:flex;flex-wrap:wrap;gap:8px}
-button,.filebtn{
-  font:500 14px var(--sans);color:var(--ink);background:var(--surface);border:1px solid var(--line);
-  border-radius:8px;padding:9px 13px;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;gap:6px
-}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-button:disabled{opacity:.45;cursor:not-allowed}
-button:focus-visible,.filebtn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.filebtn input{position:absolute;width:1px;height:1px;opacity:0}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
-.seg button{border:0;border-radius:0;min-height:38px;padding:8px 11px;font-size:13px}
-.seg button+button{border-left:1px solid var(--line)}
-.seg button[aria-pressed="true"]{background:var(--sunk);color:var(--accent);font-weight:600}
-.lbl{font:500 11px var(--mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;align-self:center}
+/* hero */
+.hero{padding:28px 0 40px}
+.hero .wrap{display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-text)}
+.dark .eyebrow{color:var(--orange)}
+.hero h1{font-size:clamp(32px,9.5vw,44px);line-height:1.12;font-weight:900;letter-spacing:-.01em}
+.hero h1 em{font-style:italic;color:var(--orange)}
+.lead{font-size:17px;line-height:1.55;color:var(--muted-dark)}
+.btn{min-height:56px;border-radius:16px;background:var(--orange);color:var(--ink);font-size:18px;font-weight:900;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .15s}
+.btn:active{transform:scale(.98)}
+.hero .btn{margin-top:12px}
+.sub-link{text-align:center;font-size:15px;color:var(--muted-dark)}
+.sub-link a{color:var(--orange);font-weight:800;display:inline-block;padding:10px 4px}
 
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
-.panel h2{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-.inspect{font:14px/1.5 var(--mono);display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline}
-.inspect .idx{font-size:28px;font-weight:600;color:var(--accent);line-height:1}
-.inspect .name{font-family:var(--sans);color:var(--ink)}
-.hint{color:var(--muted);font-size:13px;margin:0}
+/* sections */
+section.block{padding:40px 0 4px}
+section.block .wrap{display:flex;flex-direction:column;gap:16px}
+h2{font-size:28px;line-height:1.2;font-weight:900}
 
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1px;background:var(--line);
-  border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.cell{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
-.cell .k{font:500 11px var(--mono);color:var(--muted);letter-spacing:.04em}
-.cell .v{font:600 20px var(--mono);font-variant-numeric:tabular-nums}
-.cell .s{font:12px var(--sans);color:var(--muted)}
+/* swipe cards */
+.cards{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px max(24px,calc((100vw - 512px)/2)) 8px;scroll-padding-left:24px;scrollbar-width:none}
+.cards::-webkit-scrollbar{display:none}
+.card{flex:0 0 286px;scroll-snap-align:start;border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.card .tag{font-size:14px;font-weight:800}
+.card .t{font-size:22px;font-weight:900}
+.card .b{font-size:15px;line-height:1.5}
+.card.o{background:var(--orange)} .card.o .tag{color:#3A1E04} .card.o .b{color:#2A1503}
+.card.k{background:var(--ink);color:#fff} .card.k .tag{color:var(--orange)} .card.k .b{color:var(--muted-dark)}
+.card.w{background:var(--card)} .card.w .tag{color:var(--orange-text)} .card.w .b{color:var(--muted-light)}
+.hint{font-size:13px;color:#5C616A}
 
-.bars{display:flex;flex-direction:column;gap:6px}
-.bar{display:grid;grid-template-columns:minmax(0,11.5em) 1fr 3.2em;gap:8px;align-items:center;font:12.5px var(--mono)}
-.bar .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar .t{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
-.bar .f{height:100%;background:var(--accent);border-radius:4px;transition:width .08s linear}
-.bar .p{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+/* steps */
+.step{background:var(--card);border-radius:18px;padding:20px;display:flex;gap:16px;align-items:flex-start}
+.step .ic{flex-shrink:0;width:52px;height:52px;border-radius:16px;background:var(--ink);display:flex;align-items:center;justify-content:center}
+.step .n{font-size:13px;font-weight:800;color:var(--orange-text)}
+.step .t{font-size:18px;font-weight:900}
+.step .b,.row .b{font-size:15px;line-height:1.5;color:var(--muted-light)}
+.stack{display:flex;flex-direction:column;gap:12px}
 
-.foot{font-size:12.5px;color:var(--muted);margin:0}
-.foot code{font-family:var(--mono);font-size:12px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));
-  background:var(--ink);color:var(--bg);font:500 13px var(--sans);padding:8px 14px;border-radius:8px}
-@media (prefers-reduced-motion:reduce){.bar .f{transition:none}}
+/* report */
+.report{background:var(--ink);color:#fff;border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.report .meta{display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#8F949C}
+.report .meta span:first-child{letter-spacing:.06em;text-transform:uppercase;font-weight:800}
+.report .style{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.report .style strong{font-size:30px;font-weight:900}
+.report .style span{font-size:15px;font-weight:800;color:var(--orange)}
+.report svg{width:100%;max-width:340px;height:auto;align-self:center}
+.row{background:var(--card);border-radius:16px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.row .dot{flex-shrink:0;margin-top:7px;width:10px;height:10px;border-radius:5px;background:var(--orange)}
+.row .t{font-size:16px;font-weight:900}
+.row .b{font-size:14px}
+
+/* privacy */
+.priv{background:var(--card);border-radius:20px;padding:6px 20px}
+.priv .row{padding:16px 0;border-radius:0;background:none;border-bottom:1px solid #ECEAE5}
+.priv .row:last-child{border-bottom:0}
+
+/* ending */
+.end{margin-top:40px;padding:48px 0;text-align:center}
+.end .wrap{display:flex;flex-direction:column;gap:16px;align-items:center}
+.end .wordmark{font-size:34px}
+.end h2{font-size:26px;line-height:1.25}
+.end .btn{align-self:stretch;margin-top:8px}
+footer{background:var(--ink-2);padding:24px 0 calc(32px + env(safe-area-inset-bottom))}
+footer p{font-size:13px;color:#9A9FA7}
+
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Face Mesh Probe<small>478 pts</small></h1>
-    <div class="status"><span class="dot" id="dot"></span><span id="status">未载入模型</span></div>
-  </header>
 
-  <div class="stage" id="stage">
-    <div class="placeholder" id="placeholder">点 <b>开启摄像头</b> 开始测试。第一次载入模型约 4 MB，需要几秒。<br><br>也可以上传一张照片。</div>
-    <canvas id="canvas" hidden></canvas>
-    <span class="badge" id="badge" hidden></span>
-    <video id="video" playsinline muted autoplay></video>
-  </div>
-
-  <div class="controls">
-    <button class="primary" id="btnStart">开启摄像头</button>
-    <button id="btnFlip" disabled>切换前/后镜头</button>
-    <button id="btnPause" disabled>暂停</button>
-    <label class="filebtn">上传照片<input type="file" id="file" accept="image/*"></label>
-    <button id="btnCopy" disabled>复制当前帧 JSON</button>
-  </div>
-  <div class="controls">
-    <span class="lbl">编号</span>
-    <div class="seg" role="group" aria-label="编号显示">
-      <button data-label="key" aria-pressed="true">关键点</button>
-      <button data-label="all" aria-pressed="false">全部 478</button>
-      <button data-label="off" aria-pressed="false">关闭</button>
-    </div>
-    <span class="lbl">网格</span>
-    <div class="seg" role="group" aria-label="网格显示">
-      <button data-mesh="full" aria-pressed="true">完整</button>
-      <button data-mesh="contour" aria-pressed="false">轮廓</button>
-      <button data-mesh="off" aria-pressed="false">关闭</button>
+<header>
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="nilai home">
+      <img src="assets/logo.png" alt="" width="36" height="36">
+      <span class="wordmark">ni<i>lai</i></span>
+    </a>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="bm" aria-pressed="false">BM</button>
+      <button type="button" data-lang="zh" aria-pressed="false">中文</button>
     </div>
   </div>
+</header>
 
-  <section class="panel">
-    <h2>点选 landmark</h2>
-    <div id="inspect"><p class="hint">在画面上点任何位置，会选中最近的点并显示编号。先按“暂停”再点会更准。</p></div>
-  </section>
-
-  <section class="panel">
-    <h2>几何特征</h2>
-    <div class="grid">
-      <div class="cell"><span class="k">EAR · 右眼</span><span class="v" id="earR">–</span><span class="s">33 160 158 133 153 144</span></div>
-      <div class="cell"><span class="k">EAR · 左眼</span><span class="v" id="earL">–</span><span class="s">362 385 387 263 373 380</span></div>
-      <div class="cell"><span class="k">MAR</span><span class="v" id="mar">–</span><span class="s">|13–14| / |61–291|</span></div>
-      <div class="cell"><span class="k">眉高 / IOD</span><span class="v" id="brow">–</span><span class="s">105→33, 334→263</span></div>
-      <div class="cell"><span class="k">Yaw 左右转</span><span class="v" id="yaw">–</span><span class="s">度，来自变换矩阵</span></div>
-      <div class="cell"><span class="k">Pitch 抬低头</span><span class="v" id="pitch">–</span><span class="s">度</span></div>
-      <div class="cell"><span class="k">Roll 歪头</span><span class="v" id="roll">–</span><span class="s">度</span></div>
-      <div class="cell"><span class="k">IOD</span><span class="v" id="iod">–</span><span class="s">px，33↔263</span></div>
+<main>
+  <section class="hero dark">
+    <div class="wrap">
+      <img src="assets/logo.png" alt="nilai logo" width="132" height="132">
+      <p class="eyebrow" data-i18n="eyebrow">Driver behaviour profiling</p>
+      <h1><span data-i18n="h1a">Unfairly judged on the road?</span> <em data-i18n="h1b">Nilai yourself.</em></h1>
+      <p class="lead" data-i18n="sub">A computer-vision system that profiles your driving style from in-cabin video, so objective data can speak for you.</p>
+      <a class="btn" href="login.html"><span data-i18n="cta">Start my assessment</span>
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#111214" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+      </a>
+      <p class="sub-link"><span data-i18n="haveAcc">Already have an account?</span> <a href="login.html" data-i18n="login">Log in</a></p>
     </div>
   </section>
 
-  <section class="panel">
-    <h2>Blendshapes · 前 10</h2>
-    <div class="bars" id="bars"><p class="hint">检测到人脸后，这里会列出分数最高的 10 个表情系数（共 52 个）。</p></div>
+  <section class="block">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="whyEyebrow">Why nilai</p>
+      <h2 data-i18n="whyTitle">One name, two meanings</h2>
+    </div>
+    <div class="cards" style="margin-top:16px" tabindex="0" aria-label="Why nilai">
+      <div class="card o"><p class="tag">你来 · nǐ lái</p><p class="t" data-i18n="c1t">Your turn</p><p class="b" data-i18n="c1b"></p></div>
+      <div class="card k"><p class="tag">nilai · Bahasa Melayu</p><p class="t" data-i18n="c2t">Value &amp; assessment</p><p class="b" data-i18n="c2b"></p></div>
+      <div class="card w"><p class="tag" data-i18n="c3tag"></p><p class="t" data-i18n="c3t"></p><p class="b" data-i18n="c3b"></p></div>
+    </div>
+    <div class="wrap" style="margin-top:12px"><p class="hint" data-i18n="swipe">Swipe for more</p></div>
   </section>
 
-  <p class="foot">使用 <code>@mediapipe/tasks-vision 1.0.1</code> 的 FaceLandmarker，全部在手机本地运行，画面不会上传。
-    left / right 是被拍者本人的左右。前镜头画面做了镜像，只影响显示，编号不变。</p>
-</div>
-<div class="toast" id="toast" hidden></div>
+  <section class="block" id="how">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="howEyebrow">How it works</p>
+      <h2 data-i18n="howTitle">Three steps. No app to install.</h2>
+      <div class="stack">
+        <div class="step">
+          <div class="ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#F28C28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><circle cx="12" cy="5.5" r=".8" fill="#F28C28"/><path d="M10 18h4"/></svg></div>
+          <div><p class="n">01</p><p class="t" data-i18n="s1t"></p><p class="b" data-i18n="s1b"></p></div>
+        </div>
+        <div class="step">
+          <div class="ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#F28C28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5h6.5"/><path d="M14 10.5h6.5"/><path d="M12 14v7"/></svg></div>
+          <div><p class="n">02</p><p class="t" data-i18n="s2t"></p><p class="b" data-i18n="s2b"></p></div>
+        </div>
+        <div class="step">
+          <div class="ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#F28C28" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 17v-3"/><path d="M12.5 17v-6"/><path d="M16 17v-2"/></svg></div>
+          <div><p class="n">03</p><p class="t" data-i18n="s3t"></p><p class="b" data-i18n="s3b"></p></div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<script type="module">
-import { FaceLandmarker, FilesetResolver, DrawingUtils }
-  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs";
+  <section class="block">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="profEyebrow">What we profile</p>
+      <h2 data-i18n="profTitle"></h2>
+      <div class="report">
+        <div class="meta"><span data-i18n="sample"></span><span data-i18n="trips"></span></div>
+        <div class="style"><strong data-i18n="styleName"></strong><span data-i18n="styleMatch"></span></div>
+        <svg viewBox="-56 4 312 190" role="img" data-i18n-aria="radarAria">
+          <g fill="none" stroke="#3A3D43" stroke-width="1">
+            <polygon points="100,30 166.6,78.4 141.2,156.6 58.8,156.6 33.4,78.4"/>
+            <polygon points="100,53.3 144.4,85.6 127.5,137.8 72.5,137.8 55.6,85.6"/>
+            <polygon points="100,76.7 122.2,92.8 113.7,118.9 86.3,118.9 77.8,92.8"/>
+            <line x1="100" y1="100" x2="100" y2="30"/><line x1="100" y1="100" x2="166.6" y2="78.4"/>
+            <line x1="100" y1="100" x2="141.2" y2="156.6"/><line x1="100" y1="100" x2="58.8" y2="156.6"/>
+            <line x1="100" y1="100" x2="33.4" y2="78.4"/>
+          </g>
+          <polygon points="100,40.5 149.9,83.8 132.9,145.3 85.6,119.8 53.4,84.9" fill="#F28C28" fill-opacity=".28" stroke="#F28C28" stroke-width="2.5" stroke-linejoin="round"/>
+          <g fill="#F28C28"><circle cx="100" cy="40.5" r="3.5"/><circle cx="149.9" cy="83.8" r="3.5"/><circle cx="132.9" cy="145.3" r="3.5"/><circle cx="85.6" cy="119.8" r="3.5"/><circle cx="53.4" cy="84.9" r="3.5"/></g>
+          <g font-family="Nunito,'Noto Sans SC',sans-serif" font-size="12" font-weight="700" fill="#C9CCD2">
+            <text x="100" y="20" text-anchor="middle" data-i18n="ax1"></text>
+            <text x="174" y="80" text-anchor="start" data-i18n="ax2"></text>
+            <text x="146" y="176" text-anchor="middle" data-i18n="ax3"></text>
+            <text x="54" y="176" text-anchor="middle" data-i18n="ax4"></text>
+            <text x="26" y="80" text-anchor="end" data-i18n="ax5"></text>
+          </g>
+        </svg>
+      </div>
+      <div class="stack" style="gap:10px">
+        <div class="row"><span class="dot"></span><div><p class="t" data-i18n="d1t"></p><p class="b" data-i18n="d1b"></p></div></div>
+        <div class="row"><span class="dot"></span><div><p class="t" data-i18n="d2t"></p><p class="b" data-i18n="d2b"></p></div></div>
+        <div class="row"><span class="dot"></span><div><p class="t" data-i18n="d3t"></p><p class="b" data-i18n="d3b"></p></div></div>
+        <div class="row"><span class="dot"></span><div><p class="t" data-i18n="d4t"></p><p class="b" data-i18n="d4b"></p></div></div>
+      </div>
+    </div>
+  </section>
 
-const WASM  = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
-const MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+  <section class="block">
+    <div class="wrap">
+      <p class="eyebrow" data-i18n="privEyebrow">Privacy</p>
+      <h2 data-i18n="privTitle"></h2>
+      <div class="priv">
+        <div class="row"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#B5560C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><p class="t" data-i18n="p1t"></p><p class="b" data-i18n="p1b"></p></div></div>
+        <div class="row"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#B5560C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><p class="t" data-i18n="p2t"></p><p class="b" data-i18n="p2b"></p></div></div>
+        <div class="row"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#B5560C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><p class="t" data-i18n="p3t"></p><p class="b" data-i18n="p3b"></p></div></div>
+      </div>
+    </div>
+  </section>
 
-const KEY = {
-  1:"鼻尖", 152:"下巴底", 199:"下巴中", 10:"额头",
-  33:"右眼外角", 133:"右眼内角", 160:"右上眼睑1", 158:"右上眼睑2", 153:"右下眼睑2", 144:"右下眼睑1",
-  263:"左眼外角", 362:"左眼内角", 385:"左上眼睑1", 387:"左上眼睑2", 373:"左下眼睑2", 380:"左下眼睑1",
-  61:"右嘴角", 291:"左嘴角", 13:"上内唇", 14:"下内唇",
-  105:"右眉", 334:"左眉", 468:"右虹膜中心", 473:"左虹膜中心"
-};
+  <section class="end dark">
+    <div class="wrap">
+      <p class="wordmark">ni<i>lai</i>.</p>
+      <h2 data-i18n="endTitle"></h2>
+      <p class="lead" data-i18n="endSub"></p>
+      <a class="btn" href="login.html" data-i18n="cta">Start my assessment</a>
+    </div>
+  </section>
+</main>
 
-const $ = id => document.getElementById(id);
-const video = $("video"), canvas = $("canvas"), ctx = canvas.getContext("2d");
-const S = {
-  lm:null, delegate:"", stream:null, facing:"user", paused:false, mode:"video",
-  label:"key", mesh:"full", result:null, source:null, sel:null, lastT:-1,
-  fps:0, frames:0, fpsT:performance.now(), wake:null
-};
+<footer>
+  <div class="wrap">
+    <p data-i18n="foot"></p>
+    <p>fyp.itskxi.com · by Kxi Lai</p>
+  </div>
+</footer>
 
-function setStatus(text, kind){ $("status").textContent = text; $("dot").className = "dot " + (kind||""); }
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,1800); }
-
-async function ensureModel(){
-  if (S.lm) return S.lm;
-  setStatus("载入模型中…", "busy");
-  const fileset = await FilesetResolver.forVisionTasks(WASM);
-  const opts = d => ({
-    baseOptions:{ modelAssetPath:MODEL, delegate:d },
-    runningMode:"VIDEO", numFaces:1,
-    outputFaceBlendshapes:true, outputFacialTransformationMatrixes:true
-  });
-  try { S.lm = await FaceLandmarker.createFromOptions(fileset, opts("GPU")); S.delegate="GPU"; }
-  catch(e){ console.warn("GPU 失败，改用 CPU", e); S.lm = await FaceLandmarker.createFromOptions(fileset, opts("CPU")); S.delegate="CPU"; }
-  setStatus("模型就绪 · " + S.delegate, "ok");
-  return S.lm;
-}
-
-async function setMode(m){
-  if (S.mode === m) return;
-  await S.lm.setOptions({ runningMode: m === "video" ? "VIDEO" : "IMAGE" });
-  S.mode = m;
-}
-
-function showCanvas(){ $("placeholder").hidden = true; canvas.hidden = false; $("stage").classList.add("live"); }
-
-async function startCamera(){
-  $("btnStart").disabled = true;
-  try{
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error("这个浏览器不支持摄像头，或网页不是 https 打开的。");
-    await ensureModel();
-    await setMode("video");
-    stopCamera();
-    S.stream = await navigator.mediaDevices.getUserMedia({
-      audio:false, video:{ facingMode:S.facing, width:{ideal:640}, height:{ideal:480} }
+<script src="i18n.js"></script>
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.lang button');
+  function apply(lang) {
+    var t = NILAI_I18N[lang] || NILAI_I18N.en;
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : lang === 'bm' ? 'ms' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n');
+      if (t[k] != null) el.textContent = t[k];
     });
-    video.srcObject = S.stream;
-    await video.play();
-    S.source = video; S.paused = false; S.lastT = -1;
-    $("btnPause").textContent = "暂停";
-    ["btnFlip","btnPause","btnCopy"].forEach(id => $(id).disabled = false);
-    $("btnStart").textContent = "重新开启";
-    showCanvas();
-    try { S.wake = await navigator.wakeLock?.request("screen"); } catch(_){}
-    setStatus("运行中 · " + S.delegate, "ok");
-  }catch(e){
-    console.error(e);
-    const msg = e.name === "NotAllowedError" ? "摄像头权限被拒绝，请在浏览器设置里允许。"
-      : /fetch/i.test(e.message) ? "模型下载失败，请检查网络后重试。"
-      : (e.message || String(e));
-    setStatus(msg, "err");
-  }finally{ $("btnStart").disabled = false; }
-}
-function stopCamera(){ S.stream?.getTracks().forEach(t => t.stop()); S.stream = null; }
-
-function loop(){
-  if (S.mode==="video" && S.stream && !S.paused && video.readyState >= 2 && video.currentTime !== S.lastT){
-    S.lastT = video.currentTime;
-    S.result = S.lm.detectForVideo(video, performance.now());
-    S.frames++;
-    const now = performance.now();
-    if (now - S.fpsT > 500){ S.fps = S.frames*1000/(now-S.fpsT); S.frames=0; S.fpsT=now; }
-    render(); updatePanels();
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n-aria');
+      if (t[k] != null) el.setAttribute('aria-label', t[k]);
+    });
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+    try { localStorage.setItem('nilai-lang', lang); } catch (e) {}
   }
-  requestAnimationFrame(loop);
-}
-
-const mirrored = () => S.mode==="video" && S.facing==="user";
-function displayPts(){
-  const l = S.result?.faceLandmarks?.[0]; if (!l) return null;
-  return mirrored() ? l.map(p => ({x:1-p.x, y:p.y, z:p.z})) : l;
-}
-
-function render(){
-  const src = S.source; if (!src) return;
-  const w = src.videoWidth || src.naturalWidth, h = src.videoHeight || src.naturalHeight;
-  if (!w) return;
-  if (canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
-  ctx.save();
-  if (mirrored()){ ctx.translate(w,0); ctx.scale(-1,1); }
-  ctx.drawImage(src, 0, 0, w, h);
-  ctx.restore();
-
-  const pts = displayPts();
-  const u = Math.max(w,h)/640;
-  const badge = $("badge");
-  badge.hidden = false;
-  badge.textContent = (S.mode==="video" ? `${S.fps.toFixed(0)} fps · ${S.delegate}` : "照片") + (S.paused ? " · 已暂停" : "") + (pts ? "" : " · 没检测到脸");
-  if (!pts) return;
-
-  const du = new DrawingUtils(ctx);
-  const acc = "#37D0A4", amb = "#F2A93B";
-  if (S.mesh === "full") du.drawConnectors(pts, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {color:"rgba(226,234,230,0.22)", lineWidth:0.6*u});
-  if (S.mesh !== "off"){
-    du.drawConnectors(pts, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, {color:acc, lineWidth:1.2*u});
-    for (const k of ["LIPS","LEFT_EYE","RIGHT_EYE","LEFT_EYEBROW","RIGHT_EYEBROW"])
-      du.drawConnectors(pts, FaceLandmarker["FACE_LANDMARKS_"+k], {color:acc, lineWidth:1.2*u});
-    du.drawConnectors(pts, FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS, {color:amb, lineWidth:1.2*u});
-    du.drawConnectors(pts, FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS, {color:amb, lineWidth:1.2*u});
-  }
-
-  ctx.textBaseline = "middle";
-  const label = (i, size, color) => {
-    const x = pts[i].x*w, y = pts[i].y*h;
-    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, 1.6*u), 0, 7); ctx.fill();
-    ctx.font = `600 ${size}px "IBM Plex Mono", monospace`;
-    ctx.lineWidth = Math.max(2, size/4); ctx.strokeStyle = "rgba(0,0,0,.75)";
-    ctx.strokeText(String(i), x + 3*u, y - 3*u); ctx.fillStyle = "#fff"; ctx.fillText(String(i), x + 3*u, y - 3*u);
-  };
-  if (S.label === "all"){
-    const size = Math.max(6, 5.5*u);
-    for (let i=0;i<pts.length;i++){
-      const x=pts[i].x*w, y=pts[i].y*h;
-      ctx.font = `500 ${size}px "IBM Plex Mono", monospace`; ctx.fillStyle = "rgba(255,255,255,.9)";
-      ctx.fillText(String(i), x, y);
-    }
-  } else if (S.label === "key"){
-    for (const k of Object.keys(KEY)) if (pts[k]) label(+k, Math.max(9, 10*u), acc);
-  }
-  if (S.sel != null && pts[S.sel]){
-    const x = pts[S.sel].x*w, y = pts[S.sel].y*h;
-    ctx.strokeStyle = amb; ctx.lineWidth = 2*u; ctx.beginPath(); ctx.arc(x, y, 7*u, 0, 7); ctx.stroke();
-    label(S.sel, Math.max(12, 14*u), amb);
-  }
-}
-
-// ---- metrics ----
-const px = (l,i,w,h) => [l[i].x*w, l[i].y*h];
-const dist = (a,b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
-function ear(l, idx, w, h){
-  const p = idx.map(i => px(l,i,w,h));
-  return (dist(p[1],p[5]) + dist(p[2],p[4])) / (2*dist(p[0],p[3]));
-}
-function pose(m){
-  // MediaPipe 矩阵为 column-major：元素 (row r, col c) = data[c*4 + r]
-  const d = m.data, R = (r,c) => d[c*4 + r], deg = 180/Math.PI;
-  return {
-    pitch: Math.atan2(R(2,1), R(2,2))*deg,
-    yaw:   Math.asin(Math.max(-1, Math.min(1, -R(2,0))))*deg,
-    roll:  Math.atan2(R(1,0), R(0,0))*deg
-  };
-}
-function updatePanels(){
-  const l = S.result?.faceLandmarks?.[0];
-  const src = S.source, w = src.videoWidth || src.naturalWidth, h = src.videoHeight || src.naturalHeight;
-  const set = (id, v, d=3) => $(id).textContent = (v==null || !isFinite(v)) ? "–" : v.toFixed(d);
-  if (!l){ ["earR","earL","mar","brow","yaw","pitch","roll","iod"].forEach(id => set(id,null)); return; }
-  const iod = dist(px(l,33,w,h), px(l,263,w,h));
-  set("earR", ear(l,[33,160,158,133,153,144],w,h));
-  set("earL", ear(l,[362,385,387,263,373,380],w,h));
-  set("mar", dist(px(l,13,w,h),px(l,14,w,h)) / dist(px(l,61,w,h),px(l,291,w,h)));
-  set("brow", (dist(px(l,105,w,h),px(l,33,w,h)) + dist(px(l,334,w,h),px(l,263,w,h))) / (2*iod));
-  set("iod", iod, 0);
-  const m = S.result.facialTransformationMatrixes?.[0];
-  if (m){ const p = pose(m); set("yaw",p.yaw,1); set("pitch",p.pitch,1); set("roll",p.roll,1); }
-
-  const bs = S.result.faceBlendshapes?.[0]?.categories;
-  if (bs){
-    const top = [...bs].filter(c => c.categoryName !== "_neutral").sort((a,b)=>b.score-a.score).slice(0,10);
-    $("bars").innerHTML = top.map(c =>
-      `<div class="bar"><span class="n">${c.categoryName}</span><span class="t"><span class="f" style="width:${(c.score*100).toFixed(1)}%"></span></span><span class="p">${c.score.toFixed(2)}</span></div>`
-    ).join("");
-  }
-  if (S.sel != null) showInspect();
-}
-
-function showInspect(){
-  const raw = S.result?.faceLandmarks?.[0]?.[S.sel];
-  if (!raw) return;
-  $("inspect").innerHTML =
-    `<div class="inspect"><span class="idx">#${S.sel}</span>` +
-    `<span class="name">${KEY[S.sel] || (S.sel >= 468 ? "虹膜点" : "网格顶点")}</span>` +
-    `<span>x ${raw.x.toFixed(4)}</span><span>y ${raw.y.toFixed(4)}</span><span>z ${raw.z.toFixed(4)}</span></div>`;
-}
-
-canvas.addEventListener("click", e => {
-  const pts = displayPts(); if (!pts) return;
-  const r = canvas.getBoundingClientRect();
-  const x = (e.clientX - r.left)/r.width * canvas.width, y = (e.clientY - r.top)/r.height * canvas.height;
-  let best = 0, bd = Infinity;
-  for (let i=0;i<pts.length;i++){
-    const d = (pts[i].x*canvas.width - x)**2 + (pts[i].y*canvas.height - y)**2;
-    if (d < bd){ bd = d; best = i; }
-  }
-  S.sel = best; showInspect(); render();
-});
-
-// ---- controls ----
-$("btnStart").onclick = startCamera;
-$("btnFlip").onclick = () => { S.facing = S.facing === "user" ? "environment" : "user"; startCamera(); };
-$("btnPause").onclick = () => {
-  S.paused = !S.paused;
-  $("btnPause").textContent = S.paused ? "继续" : "暂停";
-  S.paused ? video.pause() : video.play();
-  render();
-};
-$("file").onchange = async e => {
-  const f = e.target.files?.[0]; if (!f) return;
-  try{
-    await ensureModel(); stopCamera(); await setMode("image");
-    const img = new Image(); img.src = URL.createObjectURL(f); await img.decode();
-    S.source = img; S.result = S.lm.detect(img); S.paused = false; S.sel = null;
-    ["btnFlip","btnPause"].forEach(id => $(id).disabled = true); $("btnCopy").disabled = false;
-    $("btnStart").textContent = "开启摄像头";
-    showCanvas(); render(); updatePanels();
-    setStatus(S.result.faceLandmarks.length ? "照片已分析" : "照片里没检测到脸", S.result.faceLandmarks.length ? "ok" : "err");
-  }catch(err){ console.error(err); setStatus(err.message || String(err), "err"); }
-  e.target.value = "";
-};
-$("btnCopy").onclick = async () => {
-  const r = S.result; if (!r?.faceLandmarks?.length){ toast("当前没有人脸数据"); return; }
-  const out = {
-    landmarks: r.faceLandmarks[0].map((p,i) => ({i, x:+p.x.toFixed(5), y:+p.y.toFixed(5), z:+p.z.toFixed(5)})),
-    blendshapes: Object.fromEntries((r.faceBlendshapes?.[0]?.categories||[]).map(c => [c.categoryName, +c.score.toFixed(4)])),
-    matrix: r.facialTransformationMatrixes?.[0]?.data
-  };
-  try { await navigator.clipboard.writeText(JSON.stringify(out)); toast("已复制 " + out.landmarks.length + " 个点"); }
-  catch(_){ toast("复制失败，浏览器不允许读写剪贴板"); }
-};
-document.querySelectorAll("[data-label]").forEach(b => b.onclick = () => {
-  S.label = b.dataset.label;
-  document.querySelectorAll("[data-label]").forEach(x => x.setAttribute("aria-pressed", x===b));
-  render();
-});
-document.querySelectorAll("[data-mesh]").forEach(b => b.onclick = () => {
-  S.mesh = b.dataset.mesh;
-  document.querySelectorAll("[data-mesh]").forEach(x => x.setAttribute("aria-pressed", x===b));
-  render();
-});
-document.addEventListener("visibilitychange", async () => {
-  if (document.visibilityState === "visible" && S.stream) { try { S.wake = await navigator.wakeLock?.request("screen"); } catch(_){} }
-});
-if (!window.isSecureContext) setStatus("需要用 https 打开才能用摄像头", "err");
-requestAnimationFrame(loop);
+  buttons.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.lang); }); });
+  var saved = 'en';
+  try { saved = localStorage.getItem('nilai-lang') || 'en'; } catch (e) {}
+  apply(saved);
+})();
 </script>
 </body>
 </html>

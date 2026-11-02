@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111214">
+<title>Log in · nilai</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,700;0,800;0,900;1,900&family=Noto+Sans+SC:wght@400;700;900&display=swap">
+<style>
+:root{--ink:#111214;--orange:#F28C28;--orange-text:#B5560C;--paper:#F5F4F1;--muted:#4A4F57}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;min-height:100dvh;background:var(--paper);color:var(--ink);font-family:'Nunito','Noto Sans SC',system-ui,sans-serif;display:flex;flex-direction:column}
+p,h1{margin:0}
+.wrap{width:100%;max-width:480px;margin:0 auto}
+.top{background:var(--ink);border-radius:0 0 28px 28px;padding:12px 12px 36px}
+.top .wrap{display:flex;flex-direction:column;gap:16px}
+.bar{display:flex;justify-content:space-between;align-items:center}
+.back{width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center}
+.back:focus-visible,button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.lang{display:flex;gap:2px;padding:3px;background:#222428;border-radius:12px}
+.lang button{min-width:44px;height:38px;border:0;border-radius:9px;background:transparent;color:#C9CCD2;font:700 13px 'Nunito','Noto Sans SC',sans-serif;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--orange);color:var(--ink);font-weight:900}
+.hello{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:0 12px}
+.wordmark{font-size:30px;font-weight:900;letter-spacing:-.02em;color:#fff;line-height:1}
+.wordmark i{color:var(--orange)}
+.hello h1{font-size:28px;font-weight:900;color:#fff}
+.hello p{font-size:16px;color:#B8BCC4}
+form{padding:28px 24px 0;display:flex;flex-direction:column;gap:18px}
+label,.lbl{font-size:14px;font-weight:800;color:#3A3F47}
+.field{display:flex;flex-direction:column;gap:8px}
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:5px;background:#E4E2DD;border-radius:14px}
+.seg button{min-height:44px;border:0;border-radius:10px;background:transparent;color:#3A3F47;font:800 15px 'Nunito','Noto Sans SC',sans-serif;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:900}
+input{height:52px;width:100%;padding:0 16px;border:1.5px solid #C9C6BF;border-radius:14px;background:#fff;font:16px 'Nunito','Noto Sans SC',sans-serif;color:var(--ink)}
+input:focus{border-color:var(--ink);outline:none}
+input::placeholder{color:#7A7F87}
+.pw{position:relative}
+.pw input{padding-right:76px}
+.pw button{position:absolute;right:4px;top:4px;height:44px;padding:0 12px;border:0;background:transparent;color:var(--orange-text);font:900 14px 'Nunito','Noto Sans SC',sans-serif;cursor:pointer}
+.forgot{align-self:flex-end;font-size:14px;font-weight:800;color:var(--orange-text);padding:6px 0}
+.btn{min-height:56px;border:0;border-radius:16px;background:var(--orange);color:var(--ink);font:900 18px 'Nunito','Noto Sans SC',sans-serif;cursor:pointer}
+.new{text-align:center;font-size:15px;color:var(--muted)}
+.new a{color:var(--orange-text);font-weight:900}
+.msg{min-height:20px;text-align:center;font-size:14px;font-weight:700;color:var(--orange-text)}
+.consent{margin-top:auto;padding:24px 24px calc(28px + env(safe-area-inset-bottom));text-align:center;font-size:13px;line-height:1.5;color:#5C616A}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap">
+    <div class="bar">
+      <a class="back" href="./" data-i18n-aria="back" aria-label="Back to home">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#F2F5F8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </a>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" data-lang="bm" aria-pressed="false">BM</button>
+        <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+      </div>
+    </div>
+    <div class="hello">
+      <img src="assets/logo.png" alt="nilai logo" width="88" height="88">
+      <p class="wordmark">ni<i>lai</i></p>
+      <h1 data-i18n="welcome">Welcome back</h1>
+      <p data-i18n="welcomeSub">Log in to see your nilai profile.</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <form id="login" novalidate>
+    <div class="field">
+      <span class="lbl" id="role-lbl" data-i18n="iam">I am a</span>
+      <div class="seg" role="group" aria-labelledby="role-lbl">
+        <button type="button" data-role="driver" aria-pressed="true" data-i18n="roleDriver">Driver</button>
+        <button type="button" data-role="operator" aria-pressed="false" data-i18n="roleOperator">Operator</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="email" data-i18n="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+    </div>
+    <div class="field">
+      <label for="password" data-i18n="password">Password</label>
+      <div class="pw">
+        <input id="password" name="password" type="password" autocomplete="current-password" data-i18n-ph="pwPlaceholder" placeholder="Your password" required>
+        <button type="button" id="toggle" data-i18n="show">Show</button>
+      </div>
+      <a class="forgot" href="#" data-i18n="forgot">Forgot password?</a>
+    </div>
+    <button class="btn" type="submit" id="submit">Log in as driver</button>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <p class="new"><span data-i18n="newHere">New to nilai?</span> <a href="#" data-i18n="request">Request access</a></p>
+  </form>
+</div>
+
+<p class="consent" data-i18n="consent">Recording and analysis only with your consent. No audio is captured.</p>
+
+<script src="i18n.js"></script>
+<script>
+(function () {
+  var state = { lang: 'en', role: 'driver', showPw: false };
+  try { state.lang = localStorage.getItem('nilai-lang') || 'en'; } catch (e) {}
+  var pw = document.getElementById('password');
+  var email = document.getElementById('email');
+
+  function render() {
+    var t = NILAI_I18N[state.lang] || NILAI_I18N.en;
+    document.documentElement.lang = state.lang === 'zh' ? 'zh-Hans' : state.lang === 'bm' ? 'ms' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var k = el.getAttribute('data-i18n');
+      if (t[k] != null) el.textContent = t[k];
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t[el.getAttribute('data-i18n-aria')]); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function (el) { el.placeholder = t[el.getAttribute('data-i18n-ph')]; });
+    document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === state.lang)); });
+    document.querySelectorAll('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.role === state.role)); });
+    document.getElementById('submit').textContent = state.role === 'driver' ? t.loginAsDriver : t.loginAsOperator;
+    email.placeholder = state.role === 'driver' ? 'you@example.com' : 'admin@yourplatform.com';
+    pw.type = state.showPw ? 'text' : 'password';
+    document.getElementById('toggle').textContent = state.showPw ? t.hide : t.show;
+  }
+
+  document.querySelectorAll('.lang button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.lang = b.dataset.lang;
+      try { localStorage.setItem('nilai-lang', state.lang); } catch (e) {}
+      render();
+    });
+  });
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () { state.role = b.dataset.role; render(); });
+  });
+  document.getElementById('toggle').addEventListener('click', function () { state.showPw = !state.showPw; render(); });
+
+  /* TODO: replace with your real auth call (e.g. fetch('/api/login', {...})) */
+  document.getElementById('login').addEventListener('submit', function (e) {
+    e.preventDefault();
+    document.getElementById('msg').textContent = 'Demo only: connect this form to your backend.';
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
